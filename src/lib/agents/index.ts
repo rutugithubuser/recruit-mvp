@@ -8,6 +8,9 @@ import { jobDescriptionAgent, myJobsAgent } from "./jobs";
 import { resumeAgent } from "./resume";
 import { findCandidatesAgent, findJobsAgent } from "./search";
 import { applyJobAgent, myApplicationsAgent, viewApplicantsAgent } from "./applications";
+import { createOfferAgent, myOffersAgent, acceptOfferAgent, declineOfferAgent, withdrawOfferAgent } from "./offers";
+import { checkScoreAgent, disputeScoreAgent } from "./scores";
+import { markJoinedAgent, reportNoJoinAgent, reportLeftAgent, reportOfferRevokedAgent, reportFiredAgent, pipelineAgent } from "./employment";
 
 // Intent -> specialist agent. New agents are added here as we build them.
 const handlers: Partial<Record<string, AgentHandler>> = {
@@ -22,6 +25,19 @@ const handlers: Partial<Record<string, AgentHandler>> = {
   apply_job: applyJobAgent,
   my_applications: myApplicationsAgent,
   view_applicants: viewApplicantsAgent,
+  create_offer: createOfferAgent,
+  my_offers: myOffersAgent,
+  accept_offer: acceptOfferAgent,
+  decline_offer: declineOfferAgent,
+  withdraw_offer: withdrawOfferAgent,
+  mark_joined: markJoinedAgent,
+  report_no_join: reportNoJoinAgent,
+  report_left_without_notice: reportLeftAgent,
+  report_offer_revoked: reportOfferRevokedAgent,
+  report_fired_without_notice: reportFiredAgent,
+  check_score: checkScoreAgent,
+  dispute_score: disputeScoreAgent,
+  pipeline: pipelineAgent,
 };
 
 export async function runAgents(ctx: AuthContext, message: string, history: ChatTurn[], via: InputVia = "text"): Promise<AgentResult> {
