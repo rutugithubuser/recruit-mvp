@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HireSpeak — AI-native, voice-first recruiting for SMEs
 
-## Getting Started
+Employers, candidates and recruitment firms **speak or type** what they need. AI agents do the work:
+writing job descriptions, company profiles, resumes, offer letters and acceptance letters, matching
+people to jobs, and keeping a trust score for everyone. There are no forms after sign-up.
 
-First, run the development server:
+Works in the **web app** (mic + chat) and on **WhatsApp** (text, voice notes, resume files).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What it does
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Requirement | How it works |
+|---|---|
+| Job description from voice/text | *"Post a job for an accounts executive, 2 years, Tally, 25-30k, Andheri"* → JD Agent writes the full JD and posts it |
+| Company description from voice/text | *"Sharma Industries, 50-person auto parts maker in Bhiwandi"* → Company Profile Agent |
+| Candidate applies by voice/text or file | Resume Agent builds a resume from speech, or reads an uploaded PDF/photo (laptop, phone, or WhatsApp). *"Apply to the first one"* applies with the latest resume |
+| Offer letters from voice/text | *"Send an offer to Priya Shah for the CA job, 70k, joining 15 Nov"* → Offer Letter Agent |
+| Offer acceptance from voice/text | *"Accept the offer from Greenleaf"* → Acceptance Agent writes a formal acceptance letter |
+| Plain-language search | *"Find me a CA with 2 years at an SME in Mumbai from manufacturing"* / *"Accountant job in Andheri East paying 30,000"* → Matching Agent ranks results with a match % and a reason |
+| Trust scores | Everyone starts at 100. −5 for: accepting and not joining, not taking a candidate after an offer, leaving without notice, firing without notice |
+| Score lookup | Employers/recruiters check candidates by **name, company or Aadhaar**; candidates check companies |
+| Dashboards | Separate dashboards for candidates, employers and recruitment firms: stats, status lists, quick actions, AI activity |
+| Central data lake | One database holding every resume (all versions), job, application, offer, acceptance, hiring record, score event and AI action, with a viewer at `/data-lake` |
+| Permissions | WhatsApp (linked by a one-time code), microphone, and file access from laptop or mobile |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Agents
 
-## Learn More
+Every message goes to the **Intake Agent**, which works out the intent and details, then hands off
+to one specialist. Every agent action is written to `agent_logs` (visible in the data lake).
 
-To learn more about Next.js, take a look at the following resources:
+| Agent | Job |
+|---|---|
+| Intake | Understands the message (handles speech errors like "sea" → "CA") and routes it |
+| Company / Firm Profile | Writes and saves the employer or recruitment-firm profile |
+| Job Description | Writes and posts JDs; updates instead of duplicating |
+| Resume | Builds resumes from speech/text, reads uploaded files, fills the candidate profile, keeps every version |
+| Matching | Ranks candidates for a role, or jobs for a candidate, using the whole data lake |
+| Application | Works out which job "the first one" means and applies |
+| Offer Letter | Writes offer letters (salary, CTC, joining date, notice, documents) |
+| Acceptance | Writes acceptance letters in the candidate's words |
+| Employment | Records joinings, no-shows and exits, and files score reports |
+| Score | Score lookups, history, disputes |
+| Transcription | Turns WhatsApp voice notes (English, Hindi, Marathi) into text |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Fairness and privacy decisions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Dispute window.** A report made *against someone else* stays pending and can be disputed. It only
+  lowers the score if not disputed in time (3 days in production, 2 minutes in the demo). Actions a
+  person takes themselves (backing out of an accepted offer, withdrawing an offer) apply at once, after
+  an explicit warning and confirmation. Declining before accepting costs nothing. Duplicate reports are blocked.
+- **Aadhaar.** Never stored. Only a salted SHA-256 hash (for lookups) and the last 4 digits (for display).
+  It is masked in AI logs too.
+- **Data access.** Row Level Security is on for every table; the browser cannot read tables directly.
+  All access goes through server routes. Recruiters see the whole data lake; employers and candidates
+  see only their own records.
+- **No invented facts.** Agents are told to use only what the user said or what is in their file.
 
-## Deploy on Vercel
+## Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Next.js 16 (App Router, TypeScript, Tailwind) · Supabase (Postgres, Auth, Storage) ·
+Google Gemini (flash-lite first for speed, flash as fallback) · Browser speech recognition (en-IN) ·
+Twilio WhatsApp · Vercel. Most of the code was written with an AI coding assistant.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Run it
+
+1. Create a Supabase project, turn on automatic RLS, and run `supabase/schema.sql` in the SQL editor.
+2. `cp .env.example .env.local` and fill it in.
+3. `npm install` then `npm run dev` and open http://localhost:3000
+4. Optional demo data (15 fictional candidates, 8 jobs, some lowered scores; no AI quota used):
+   `node --env-file=.env.local scripts/seed.mjs`
+
+### WhatsApp (Twilio sandbox)
+
+1. Deploy (WhatsApp needs a public URL).
+2. Twilio Console → Messaging → Try it out → Send a WhatsApp message → **Sandbox settings**:
+   "When a message comes in" = `https://<your-app>/api/whatsapp`, method **POST**.
+3. Put the sandbox join phrase in `TWILIO_SANDBOX_JOIN`.
+4. On the dashboard, follow **Connect WhatsApp**: send the join phrase, then `LINK <code>`.
+
+## Known limits of this MVP
+
+- Search and matching are shown on a **seeded set of 15 fictional candidates and 8 jobs**
+  (`scripts/seed.mjs`). Everything created in the demo itself was generated live by the agents.
+- WhatsApp uses the **Twilio sandbox**; production needs an approved WhatsApp Business number.
+- Gemini **free tier** has daily limits; the app switches models automatically when one runs out.
+- Voice input in the browser needs Chrome or Edge.
+- Disputes are recorded and pause the penalty; a human review step would be added for production.
+
+## Next steps
+
+Admin review queue for disputes · Aadhaar verification through a licensed provider (DigiLocker) ·
+Hindi and Marathi in the web app · semantic search with embeddings as the data lake grows ·
+email/WhatsApp notifications when an offer or report arrives.

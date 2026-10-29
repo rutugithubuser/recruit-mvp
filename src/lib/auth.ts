@@ -29,3 +29,12 @@ export async function getAuthContext(req: Request): Promise<AuthContext | null> 
 
   return { userId: data.user.id, email: data.user.email ?? null, profile: profile as Profile };
 }
+
+/** Build the same context for a user identified another way (e.g. their WhatsApp number). */
+export async function getContextForUser(userId: string): Promise<AuthContext | null> {
+  const { data: profile } = await supabaseAdmin
+    .from("profiles").select("id, role, full_name, phone").eq("id", userId).single();
+  if (!profile) return null;
+  const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
+  return { userId, email: data.user?.email ?? null, profile: profile as Profile };
+}

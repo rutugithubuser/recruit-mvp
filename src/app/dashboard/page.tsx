@@ -7,7 +7,8 @@ import { apiFetch } from "@/lib/api";
 import ChatPanel from "@/components/ChatPanel";
 
 type Role = "candidate" | "employer" | "recruiter";
-type Me = { profile: { id: string; role: Role; full_name: string | null }; email: string | null; entity: Record<string, unknown> | null };
+type WhatsApp = { linked: boolean; phone: string | null; code: string; number: string; join: string | null };
+type Me = { profile: { id: string; role: Role; full_name: string | null }; email: string | null; entity: Record<string, unknown> | null; whatsapp: WhatsApp | null };
 type Dash = {
   stats: { label: string; value: number; prompt?: string }[];
   lists: { title: string; items: { title: string; status?: string; note?: string; prompt?: string }[] }[];
@@ -206,6 +207,29 @@ export default function Dashboard() {
               )}
             </div>
           ))}
+
+          {/* WhatsApp */}
+          {me.whatsapp && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-4">
+              <div className="text-sm font-semibold mb-1">💬 WhatsApp {me.whatsapp.linked && <span className="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] text-green-700">connected {me.whatsapp.phone}</span>}</div>
+              {me.whatsapp.linked ? (
+                <p className="text-xs text-gray-600">
+                  Text or send voice notes to <b>{me.whatsapp.number}</b>{role === "candidate" ? ", or send your resume PDF / photo" : ""}. The same AI agents reply on WhatsApp.
+                </p>
+              ) : (
+                <ol className="text-xs text-gray-600 list-decimal pl-4 space-y-1">
+                  <li>Save <b>{me.whatsapp.number}</b> and open it in WhatsApp</li>
+                  {me.whatsapp.join && <li>Send <b className="font-mono">{me.whatsapp.join}</b> (one-time sandbox step)</li>}
+                  <li>Send <b className="font-mono">LINK {me.whatsapp.code}</b></li>
+                </ol>
+              )}
+              <a href={`https://wa.me/${me.whatsapp.number.replace("+", "")}?text=${encodeURIComponent(me.whatsapp.linked ? "What can you do?" : me.whatsapp.join ?? `LINK ${me.whatsapp.code}`)}`}
+                target="_blank" rel="noreferrer"
+                className="mt-2 inline-block rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">
+                Open WhatsApp
+              </a>
+            </div>
+          )}
 
           {/* Agent activity */}
           {dash && dash.agentActivity.length > 0 && (
