@@ -83,7 +83,7 @@ Already extracted: ${JSON.stringify(intent.entities)}`;
     };
   }
 
-  const { data: job, error } = await supabaseAdmin.from("jobs").insert({
+  const row = {
     company_id: company.id,
     posted_by: ctx.userId,
     title: out.title.trim(),
@@ -95,8 +95,27 @@ Already extracted: ${JSON.stringify(intent.entities)}`;
     skills: out.skills ?? [],
     industry: out.industry || company.industry,
     status: "open",
-  }).select().single();
+  };
+
+  // Same title already open? Update that job instead of posting a duplicate.
+  const { data: same } = await supabaseAdmin
+    .from("jobs").select("id").eq("company_id", company.id).eq("status", "open").ilike("title", row.title)
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
+
+  const { data: job, error } = same
+    ? await supabaseAdmin.from("jobs").update(row).eq("id", same.id).select().single()
+    : await supabaseAdmin.from("jobs").insert(row).select().single();
   if (error) throw new Error(error.message);
+
+  if (same) {
+    return {
+      agent: "job_description",
+      intent: intent.intent,
+      reply: `You already had an open "${job.title}" job, so I updated it with these details instead of posting a duplicate.`,
+      cards: [jobCard(job, company.name)],
+      data: job,
+    };
+  }
 
   return {
     agent: "job_description",
