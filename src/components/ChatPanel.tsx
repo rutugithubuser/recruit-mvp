@@ -11,9 +11,11 @@ type Msg = { from: "user" | "agent"; text: string; cards?: Card[]; agent?: strin
 export default function ChatPanel({
   suggestions,
   onResult,
+  allowUpload = false,
 }: {
   suggestions: string[];
   onResult?: (r: AgentResult) => void;
+  allowUpload?: boolean;
 }) {
   const [messages, setMessages] = useState<Msg[]>([
     { from: "agent", text: "Hi! Tap the mic and speak, or type what you need." },
@@ -24,13 +26,37 @@ export default function ChatPanel({
   const messagesRef = useRef<Msg[]>(messages);
   const recRef = useRef<any>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesRef.current = messages;
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function send(text: string) {
+  async function uploadFile(file: File) {
+    if (busy) return;
+    setMessages((m) => [...m, { from: "user", text: `📎 ${file.name}` }]);
+    setBusy(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("message", input.trim() || "Here is my resume");
+      setInput("");
+      const res = await apiFetch("/api/resume/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      const result = data as AgentResult;
+      setMessages((m) => [...m, { from: "agent", text: result.reply, cards: result.cards, agent: result.agent }]);
+      onResult?.(result);
+    } catch (e) {
+      setMessages((m) => [...m, { from: "agent", text: "⚠️ " + (e as Error).message }]);
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function send(text: string, via: "voice" | "text" = "text") {
     const t = text.trim();
     if (!t || busy) return;
     const history: ChatTurn[] = messagesRef.current.slice(-6).map((m) => ({ from: m.from, text: m.text }));
@@ -38,7 +64,7 @@ export default function ChatPanel({
     setInput("");
     setBusy(true);
     try {
-      const res = await apiFetch("/api/agent", { method: "POST", body: JSON.stringify({ message: t, history }) });
+      const res = await apiFetch("/api/agent", { method: "POST", body: JSON.stringify({ message: t, history, via }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Something went wrong");
       const result = data as AgentResult;
@@ -77,7 +103,7 @@ export default function ChatPanel({
     };
     rec.onend = () => {
       setListening(false);
-      if (finalText.trim()) send(finalText);
+      if (finalText.trim()) send(finalText, "voice");
     };
     rec.onerror = () => setListening(false);
     recRef.current = rec;
@@ -98,7 +124,7 @@ export default function ChatPanel({
               {m.agent && m.agent !== "help" && (
                 <div className="text-[11px] text-gray-400 pl-2">handled by {m.agent} agent</div>
               )}
-              {m.cards?.map((c, j) => <ResultCard key={j} card={c} onAction={send} />)}
+              {m.cards?.map((c, j) => <ResultCard key={j} card={c} onAction={(p) => send(p)} />)}
             </div>
           </div>
         ))}
@@ -123,6 +149,16 @@ export default function ChatPanel({
             listening ? "bg-red-500 text-white animate-pulse" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}>
           {listening ? "■" : "🎤"}
         </button>
+        {allowUpload && (
+          <>
+            <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); }} />
+            <button type="button" onClick={() => fileRef.current?.click()} title="Upload resume from laptop or phone"
+              className="shrink-0 h-11 w-11 rounded-full flex items-center justify-center text-lg bg-gray-100 hover:bg-gray-200">
+              📎
+            </button>
+          </>
+        )}
         <input value={input} onChange={(e) => setInput(e.target.value)}
           placeholder={listening ? "Listening…" : "Speak or type what you need…"}
           className="flex-1 rounded-full border border-gray-300 px-4 text-sm outline-none focus:border-indigo-500" />

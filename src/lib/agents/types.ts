@@ -1,4 +1,5 @@
 // Shared types for all agents. Safe to import (as types) from client code.
+import type { AuthContext } from "../auth";
 
 export type CardAction = { label: string; prompt: string };
 
@@ -39,3 +40,15 @@ export type Entities = {
 };
 
 export type Intent = { intent: string; entities: Entities };
+
+export type InputVia = "voice" | "text";
+
+export type AgentInput = {
+  ctx: AuthContext;
+  message: string;
+  history: ChatTurn[];
+  intent: Intent;
+  via: InputVia;
+};
+
+export type AgentHandler = (input: AgentInput) => Promise<AgentResult>;

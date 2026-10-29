@@ -2,27 +2,35 @@
 import type { AuthContext } from "../auth";
 import { runIntake, INTENTS } from "./intake";
 import { logAgent } from "./log";
-import type { AgentResult, ChatTurn, Intent } from "./types";
+import type { AgentHandler, AgentResult, ChatTurn, InputVia } from "./types";
+import { companyProfileAgent, firmProfileAgent } from "./profile";
+import { jobDescriptionAgent, myJobsAgent } from "./jobs";
+import { resumeAgent } from "./resume";
+import { findCandidatesAgent, findJobsAgent } from "./search";
+import { applyJobAgent, myApplicationsAgent, viewApplicantsAgent } from "./applications";
 
-export type AgentInput = { ctx: AuthContext; message: string; history: ChatTurn[]; intent: Intent };
-export type AgentHandler = (input: AgentInput) => Promise<AgentResult>;
-
-// Specialist agents register here as we build them (job, resume, offer, score...).
+// Intent -> specialist agent. New agents are added here as we build them.
 const handlers: Partial<Record<string, AgentHandler>> = {
   help: async ({ ctx }) => helpAgent(ctx),
+  create_company_profile: companyProfileAgent,
+  create_firm_profile: firmProfileAgent,
+  create_job: jobDescriptionAgent,
+  my_jobs: myJobsAgent,
+  build_resume: resumeAgent,
+  find_candidates: findCandidatesAgent,
+  find_jobs: findJobsAgent,
+  apply_job: applyJobAgent,
+  my_applications: myApplicationsAgent,
+  view_applicants: viewApplicantsAgent,
 };
 
-export function registerAgent(intent: string, handler: AgentHandler) {
-  handlers[intent] = handler;
-}
-
-export async function runAgents(ctx: AuthContext, message: string, history: ChatTurn[]): Promise<AgentResult> {
+export async function runAgents(ctx: AuthContext, message: string, history: ChatTurn[], via: InputVia = "text"): Promise<AgentResult> {
   const intent = await runIntake(ctx.profile.role, message, history);
   await logAgent("intake", ctx.userId, { message }, intent);
 
   const handler = handlers[intent.intent];
   const result: AgentResult = handler
-    ? await handler({ ctx, message, history, intent })
+    ? await handler({ ctx, message, history, intent, via })
     : {
         agent: "orchestrator",
         intent: intent.intent,

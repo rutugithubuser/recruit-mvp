@@ -73,7 +73,7 @@ export default function Dashboard() {
 
       <main className="flex-1 grid lg:grid-cols-5 gap-4 p-4 min-h-0">
         <section className="lg:col-span-3 min-h-[60vh] lg:min-h-0">
-          <ChatPanel suggestions={SUGGESTIONS[role]} onResult={() => loadMe()} />
+          <ChatPanel suggestions={SUGGESTIONS[role]} onResult={() => loadMe()} allowUpload={role === "candidate"} />
         </section>
 
         <aside className="lg:col-span-2 space-y-4 overflow-y-auto">
@@ -88,6 +88,25 @@ export default function Dashboard() {
                 : "Everyone starts at 100. Each confirmed no-show or exit without notice is −5."}
             </p>
           </div>
+          {me.entity && (me.entity.description || me.entity.current_title) ? (
+            <div className="rounded-2xl border border-gray-200 bg-white p-5">
+              <div className="text-sm text-gray-500">{role === "candidate" ? "Your profile" : role === "employer" ? "Company profile" : "Firm profile"}</div>
+              <div className="font-semibold text-lg mt-1">{String(me.entity.name ?? me.entity.full_name ?? "")}</div>
+              <div className="text-sm text-gray-500">
+                {[me.entity.current_title, me.entity.industry, me.entity.location].filter(Boolean).map(String).join(" · ")}
+              </div>
+              {typeof me.entity.description === "string" && (
+                <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{me.entity.description}</p>
+              )}
+              {Array.isArray(me.entity.skills) && me.entity.skills.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {(me.entity.skills as string[]).map((s) => (
+                    <span key={s} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">{s}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : null}
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-5 text-sm text-gray-500">
             Dashboard widgets (jobs, applications, offers, status) are added in the next build step.
           </div>
