@@ -5,7 +5,8 @@ import type { ChatTurn, Intent } from "./types";
 
 export const INTENTS: Record<Role, Record<string, string>> = {
   candidate: {
-    build_resume: "Create or update their resume from what they describe",
+    build_resume: "Create or update their resume from what they describe (they give NEW details)",
+    my_resumes: "View their resume / profile, or all saved resume versions",
     find_jobs: "Search for jobs (role, area, salary, experience)",
     apply_job: "Apply to a specific job",
     my_applications: "See status of jobs they applied to",
@@ -19,7 +20,8 @@ export const INTENTS: Record<Role, Record<string, string>> = {
     help: "Ask what the app can do, greetings, or anything unclear",
   },
   employer: {
-    create_company_profile: "Create or update their company description",
+    create_company_profile: "Create or update their company description (they give NEW details)",
+    view_company_profile: "View their current company profile",
     create_job: "Create and post a job description",
     find_candidates: "Search for candidates (role, experience, location, industry)",
     my_jobs: "See jobs they posted",
@@ -35,7 +37,8 @@ export const INTENTS: Record<Role, Record<string, string>> = {
     help: "Ask what the app can do, greetings, or anything unclear",
   },
   recruiter: {
-    create_firm_profile: "Create or update their recruitment firm description",
+    create_firm_profile: "Create or update their recruitment firm description (they give NEW details)",
+    view_firm_profile: "View their current firm profile",
     find_candidates: "Search for candidates (role, experience, location, industry)",
     find_jobs: "Search open jobs to fill",
     pipeline: "See overall hiring pipeline: offers, acceptances, joinings",
@@ -87,7 +90,7 @@ Speech-to-text may mishear roles: "sea"/"see a" usually means "CA". Salaries are
   const convo = history.map((t) => `${t.from === "user" ? "User" : "App"}: ${t.text}`).join("\n");
   const prompt = `${convo ? `Recent conversation:\n${convo}\n\n` : ""}New message: ${message}`;
 
-  const result = await generateJSON<Intent>(prompt, schema, system);
+  const result = await generateJSON<Intent>(prompt, schema, system, { fast: true });
   if (!intents[result.intent]) result.intent = "help";
   // Drop empty / zero values the model sometimes adds for fields the user never said.
   const cleaned = Object.fromEntries(

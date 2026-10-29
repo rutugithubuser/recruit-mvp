@@ -3,9 +3,9 @@ import type { AuthContext } from "../auth";
 import { runIntake, INTENTS } from "./intake";
 import { logAgent } from "./log";
 import type { AgentHandler, AgentResult, ChatTurn, InputVia } from "./types";
-import { companyProfileAgent, firmProfileAgent } from "./profile";
+import { companyProfileAgent, firmProfileAgent, viewCompanyProfileAgent, viewFirmProfileAgent } from "./profile";
 import { jobDescriptionAgent, myJobsAgent } from "./jobs";
-import { resumeAgent } from "./resume";
+import { resumeAgent, myResumesAgent } from "./resume";
 import { findCandidatesAgent, findJobsAgent } from "./search";
 import { applyJobAgent, myApplicationsAgent, viewApplicantsAgent } from "./applications";
 import { createOfferAgent, myOffersAgent, acceptOfferAgent, declineOfferAgent, withdrawOfferAgent } from "./offers";
@@ -20,6 +20,9 @@ const handlers: Partial<Record<string, AgentHandler>> = {
   create_job: jobDescriptionAgent,
   my_jobs: myJobsAgent,
   build_resume: resumeAgent,
+  my_resumes: myResumesAgent,
+  view_company_profile: viewCompanyProfileAgent,
+  view_firm_profile: viewFirmProfileAgent,
   find_candidates: findCandidatesAgent,
   find_jobs: findJobsAgent,
   apply_job: applyJobAgent,
@@ -41,8 +44,10 @@ const handlers: Partial<Record<string, AgentHandler>> = {
 };
 
 export async function runAgents(ctx: AuthContext, message: string, history: ChatTurn[], via: InputVia = "text"): Promise<AgentResult> {
+  const t0 = Date.now();
   const intent = await runIntake(ctx.profile.role, message, history);
-  await logAgent("intake", ctx.userId, { message }, intent);
+  const intakeLog = logAgent("intake", ctx.userId, { message }, intent);
+  console.log(`[agents] intent=${intent.intent} after ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 
   const handler = handlers[intent.intent];
   const result: AgentResult = handler
@@ -63,7 +68,8 @@ export async function runAgents(ctx: AuthContext, message: string, history: Chat
         ],
       };
 
-  await logAgent(result.agent, ctx.userId, { message, intent }, { reply: result.reply, data: result.data ?? null });
+  await Promise.all([intakeLog, logAgent(result.agent, ctx.userId, { message, intent }, { reply: result.reply, data: result.data ?? null })]);
+  console.log(`[agents] ${result.agent} done in ${((Date.now() - t0) / 1000).toFixed(1)}s total`);
   return result;
 }
 

@@ -9,7 +9,7 @@ import ChatPanel from "@/components/ChatPanel";
 type Role = "candidate" | "employer" | "recruiter";
 type Me = { profile: { id: string; role: Role; full_name: string | null }; email: string | null; entity: Record<string, unknown> | null };
 type Dash = {
-  stats: { label: string; value: number }[];
+  stats: { label: string; value: number; prompt?: string }[];
   lists: { title: string; items: { title: string; status?: string; note?: string; prompt?: string }[] }[];
   agentActivity: { agent: string; at: string; summary: string }[];
 };
@@ -64,7 +64,8 @@ const STATUS_STYLE: Record<string, string> = {
   open: "bg-green-100 text-green-700", applied: "bg-blue-100 text-blue-700", shortlisted: "bg-indigo-100 text-indigo-700",
   offered: "bg-pink-100 text-pink-700", sent: "bg-amber-100 text-amber-700", accepted: "bg-green-100 text-green-700",
   joined: "bg-emerald-100 text-emerald-800", declined: "bg-gray-100 text-gray-600", no_show: "bg-red-100 text-red-700",
-  revoked: "bg-red-100 text-red-700", rejected: "bg-gray-100 text-gray-600", closed: "bg-gray-100 text-gray-600",
+  revoked: "bg-red-100 text-red-700", voice: "bg-purple-100 text-purple-700", text: "bg-purple-100 text-purple-700",
+  upload: "bg-purple-100 text-purple-700", whatsapp: "bg-green-100 text-green-700", rejected: "bg-gray-100 text-gray-600", closed: "bg-gray-100 text-gray-600",
 };
 const STATUS_TEXT: Record<string, string> = { sent: "waiting", no_show: "didn't join", revoked: "withdrawn", offered: "offer sent" };
 
@@ -124,22 +125,23 @@ export default function Dashboard() {
           {/* Profile + score */}
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-sm text-gray-500">{role === "candidate" ? "Your profile" : role === "employer" ? "Company" : "Firm"}</div>
+              <button className="min-w-0 text-left hover:opacity-80" title="View full profile"
+                onClick={() => run({ prompt: role === "candidate" ? "Show my resume" : role === "employer" ? "Show my company profile" : "Show my firm profile" })}>
+                <div className="text-sm text-gray-500">{role === "candidate" ? "Your profile" : role === "employer" ? "Company" : "Firm"} <span className="text-indigo-500">· view →</span></div>
                 <div className="font-semibold text-lg truncate">
                   {String(e?.name ?? e?.full_name ?? "Not set up yet")}
                 </div>
                 <div className="text-sm text-gray-500 truncate">
                   {[e?.current_title, e?.industry, e?.location].filter(Boolean).map(String).join(" · ")}
                 </div>
-              </div>
+              </button>
               {role !== "recruiter" && (
-                <div className="text-right shrink-0">
+                <button className="text-right shrink-0 hover:opacity-80" title="See score details" onClick={() => run({ prompt: "What is my score?" })}>
                   <div className="text-xs text-gray-500">Trust score</div>
                   <div className={`text-3xl font-bold ${score !== null && score < 100 ? (score < 85 ? "text-red-600" : "text-amber-600") : "text-gray-900"}`}>
                     {score ?? "—"}
                   </div>
-                </div>
+                </button>
               )}
             </div>
             {!e?.description && !e?.current_title && (
@@ -154,10 +156,11 @@ export default function Dashboard() {
           {dash && dash.stats.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2">
               {dash.stats.map((s) => (
-                <div key={s.label} className="rounded-xl border border-gray-200 bg-white p-3">
+                <button key={s.label} onClick={() => s.prompt && run({ prompt: s.prompt })}
+                  className="text-left rounded-xl border border-gray-200 bg-white p-3 hover:border-indigo-400 hover:bg-indigo-50 transition">
                   <div className="text-2xl font-bold">{s.value}</div>
-                  <div className="text-xs text-gray-500">{s.label}</div>
-                </div>
+                  <div className="text-xs text-gray-500">{s.label} →</div>
+                </button>
               ))}
             </div>
           )}

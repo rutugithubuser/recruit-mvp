@@ -83,7 +83,7 @@ ${jobs.length ? `Employer's open jobs (if the request is vague or names one of t
 Candidates:
 ${JSON.stringify(records)}`;
 
-  const ranking = await generateJSON<Ranking>(prompt, RANK_SCHEMA, `You are the Matching Agent of a recruiting app for Indian SMEs. Rank CANDIDATES for an employer/recruiter.\n${RANK_RULES}`);
+  const ranking = await generateJSON<Ranking>(prompt, RANK_SCHEMA, `You are the Matching Agent of a recruiting app for Indian SMEs. Rank CANDIDATES for an employer/recruiter.\n${RANK_RULES}`, { fast: true });
 
   const byId = new Map(candidates.map((c) => [c.id, c]));
   const job = jobs.find((j) => j.id === ranking.job_id);
@@ -174,7 +174,7 @@ ${profile ? `Candidate profile (use as default preferences when the request is v
 Jobs:
 ${JSON.stringify(records)}`;
 
-  const ranking = await generateJSON<Ranking>(prompt, RANK_SCHEMA, `You are the Matching Agent of a recruiting app for Indian SMEs. Rank JOBS for a job seeker.\n${RANK_RULES}\nIf a salary is requested, jobs paying clearly below it should score low.`);
+  const ranking = await generateJSON<Ranking>(prompt, RANK_SCHEMA, `You are the Matching Agent of a recruiting app for Indian SMEs. Rank JOBS for a job seeker.\n${RANK_RULES}\nIf a salary is requested, jobs paying clearly below it should score low.`, { fast: true });
 
   const byId = new Map(jobs.map((j) => [j.id, j]));
   const matches = ranking.matches.filter((m) => byId.has(m.id)).slice(0, 5);

@@ -48,7 +48,8 @@ Open jobs: ${JSON.stringify(list)}`,
       },
       required: ["job_id", "match_score"],
     },
-    "You are the Application Agent. Identify exactly which open job the candidate means (use the conversation: 'apply to the first one' = first job shown earlier). Then score the fit."
+    "You are the Application Agent. Identify exactly which open job the candidate means (use the conversation: 'apply to the first one' = first job shown earlier). Then score the fit.",
+    { fast: true }
   );
 
   const job = jobs.find((j) => j.id === pick.job_id);

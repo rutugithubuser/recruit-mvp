@@ -26,18 +26,19 @@ export async function GET(req: Request) {
   if (role === "candidate") {
     const { data: cand } = await supabaseAdmin.from("candidates").select("id, score").eq("user_id", ctx.userId).maybeSingle();
     if (!cand) return Response.json({ role, stats: [], lists: [], agentActivity });
-    const [{ data: apps }, { data: offers }, { count: resumes }] = await Promise.all([
+    const [{ data: apps }, { data: offers }, { count: resumes }, { data: versions }] = await Promise.all([
       supabaseAdmin.from("applications").select("status, created_at, jobs(title, companies(name))").eq("candidate_id", cand.id).order("created_at", { ascending: false }),
       supabaseAdmin.from("offers").select("status, salary, joining_date, jobs(title), companies(name, score)").eq("candidate_id", cand.id).order("created_at", { ascending: false }),
       supabaseAdmin.from("resumes").select("id", { count: "exact", head: true }).eq("candidate_id", cand.id),
+      supabaseAdmin.from("resumes").select("source, created_at").eq("candidate_id", cand.id).order("created_at", { ascending: false }).limit(5),
     ]);
     return Response.json({
       role,
       stats: [
-        { label: "Resume versions", value: resumes ?? 0 },
-        { label: "Applications", value: apps?.length ?? 0 },
-        { label: "Offers waiting", value: countOf(offers, "status", "sent") },
-        { label: "Accepted", value: countOf(offers, "status", "accepted") + countOf(offers, "status", "joined") },
+        { label: "Resume versions", value: resumes ?? 0, prompt: "Show all my resume versions" },
+        { label: "Applications", value: apps?.length ?? 0, prompt: "Show my applications" },
+        { label: "Offers waiting", value: countOf(offers, "status", "sent"), prompt: "Show my offers" },
+        { label: "Accepted", value: countOf(offers, "status", "accepted") + countOf(offers, "status", "joined"), prompt: "Show my offers" },
       ],
       lists: [
         {
@@ -46,6 +47,15 @@ export async function GET(req: Request) {
             const job = rel<Named>(o.jobs); const co = rel<Named>(o.companies);
             return { title: `${job?.title} — ${co?.name}`, status: o.status, prompt: o.status === "sent" ? `Accept the ${job?.title} offer from ${co?.name}` : "Show my offers" };
           }),
+        },
+        {
+          title: "My resume versions",
+          items: (versions ?? []).map((v, i) => ({
+            title: `Version ${(resumes ?? 0) - i}${i === 0 ? " (current)" : ""}`,
+            note: new Date(v.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
+            status: v.source,
+            prompt: "Show all my resume versions",
+          })),
         },
         {
           title: "My applications",
@@ -70,10 +80,10 @@ export async function GET(req: Request) {
     return Response.json({
       role,
       stats: [
-        { label: "Open jobs", value: countOf(jobs, "status", "open") },
-        { label: "Applicants", value: applicants },
-        { label: "Offers sent", value: offers?.length ?? 0 },
-        { label: "Joined", value: countOf(offers, "status", "joined") },
+        { label: "Open jobs", value: countOf(jobs, "status", "open"), prompt: "Show my jobs" },
+        { label: "Applicants", value: applicants, prompt: "Show applicants for all my jobs" },
+        { label: "Offers sent", value: offers?.length ?? 0, prompt: "Show my offers" },
+        { label: "Joined", value: countOf(offers, "status", "joined"), prompt: "Show my offers" },
       ],
       lists: [
         {
@@ -107,10 +117,10 @@ export async function GET(req: Request) {
   return Response.json({
     role,
     stats: [
-      { label: "Candidates", value: cands ?? 0 },
-      { label: "Open jobs", value: jobs?.length ?? 0 },
-      { label: "Offers accepted", value: countOf(offers, "status", "accepted") + countOf(offers, "status", "joined") },
-      { label: "No-shows", value: countOf(offers, "status", "no_show") },
+      { label: "Candidates", value: cands ?? 0, prompt: "Find me candidates" },
+      { label: "Open jobs", value: jobs?.length ?? 0, prompt: "Show me open jobs" },
+      { label: "Offers accepted", value: countOf(offers, "status", "accepted") + countOf(offers, "status", "joined"), prompt: "Show my pipeline" },
+      { label: "No-shows", value: countOf(offers, "status", "no_show"), prompt: "Show my pipeline" },
     ],
     lists: [
       {

@@ -132,3 +132,22 @@ export const firmProfileAgent: AgentHandler = async ({ ctx, message, history, in
     data,
   };
 };
+
+// ---------- VIEW PROFILES ----------
+export const viewCompanyProfileAgent: AgentHandler = async ({ ctx, intent }) => {
+  const { data } = await supabaseAdmin.from("companies").select("*").eq("owner_id", ctx.userId).maybeSingle();
+  if (!data) return { agent: "company_profile", intent: intent.intent, reply: "You haven't set up your company yet. Tell me its name, what it does, where it is and its size." };
+  return {
+    agent: "company_profile", intent: intent.intent, reply: "Here's your company profile. To change it, just tell me what to update.",
+    cards: [companyCard(data)],
+  };
+};
+
+export const viewFirmProfileAgent: AgentHandler = async ({ ctx, intent }) => {
+  const { data } = await supabaseAdmin.from("recruitment_firms").select("*").eq("owner_id", ctx.userId).maybeSingle();
+  if (!data) return { agent: "firm_profile", intent: intent.intent, reply: "You haven't set up your firm yet. Tell me its name and what roles you place." };
+  return {
+    agent: "firm_profile", intent: intent.intent, reply: "Here's your firm profile. To change it, just tell me what to update.",
+    cards: [{ type: "firm", id: data.id, title: data.name, body: data.description }],
+  };
+};

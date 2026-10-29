@@ -146,3 +146,28 @@ Candidate's message: ${message}`;
 
 export const resumeAgent: AgentHandler = async ({ ctx, message, history, via }) =>
   buildResume({ ctx, message, history, source: via });
+
+// ---------- VIEW RESUME VERSIONS ----------
+export const myResumesAgent: AgentHandler = async ({ ctx, intent }) => {
+  const { data: candidate } = await supabaseAdmin.from("candidates").select("*").eq("user_id", ctx.userId).maybeSingle();
+  if (!candidate) throw new Error("Candidate profile not found.");
+  const { data: versions } = await supabaseAdmin
+    .from("resumes").select("id, source, file_path, content, created_at").eq("candidate_id", candidate.id)
+    .order("created_at", { ascending: false });
+  if (!versions?.length) {
+    return { agent: "resume", intent: intent.intent, reply: "You don't have a resume yet. Tell me about your experience, or upload one with 📎." };
+  }
+  const SOURCE: Record<string, string> = { voice: "🎤 from voice", text: "⌨️ from text", upload: "📎 from uploaded file", whatsapp: "💬 from WhatsApp" };
+  const cards: Card[] = versions.map((v, i) => {
+    const card: Card = i === 0 ? resumeCard(candidate, v.content) : { type: "resume", title: "", body: v.content };
+    card.id = v.id;
+    card.title = `Version ${versions.length - i}${i === 0 ? " (current)" : ""}`;
+    card.subtitle = `${SOURCE[v.source] ?? v.source} · ${new Date(v.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`;
+    return card;
+  });
+  return {
+    agent: "resume", intent: intent.intent,
+    reply: `You have ${versions.length} resume version${versions.length > 1 ? "s" : ""}. The newest one is used when you apply.`,
+    cards,
+  };
+};

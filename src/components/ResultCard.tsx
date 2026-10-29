@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import type { Card } from "@/lib/agents/types";
 
 const COLORS: Record<Card["type"], string> = {
@@ -14,6 +15,8 @@ const COLORS: Record<Card["type"], string> = {
 };
 
 export default function ResultCard({ card, onAction }: { card: Card; onAction: (prompt: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const long = (card.body?.length ?? 0) > 280;
   const meta = Object.entries(card.meta ?? {}).filter(([, v]) => v !== null && v !== undefined && v !== "");
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm">
@@ -36,7 +39,16 @@ export default function ResultCard({ card, onAction }: { card: Card; onAction: (
           ))}
         </dl>
       )}
-      {card.body && <p className="mt-2 whitespace-pre-wrap text-gray-700 max-h-64 overflow-y-auto">{card.body}</p>}
+      {card.body && (
+        <div className="mt-2">
+          <p className={`whitespace-pre-wrap text-gray-700 ${long && !open ? "line-clamp-4" : ""}`}>{card.body}</p>
+          {long && (
+            <button onClick={() => setOpen(!open)} className="mt-1 text-xs font-medium text-indigo-600 hover:underline">
+              {open ? "Show less ▲" : "Show full ▼"}
+            </button>
+          )}
+        </div>
+      )}
       {card.actions && card.actions.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {card.actions.map((a) => (

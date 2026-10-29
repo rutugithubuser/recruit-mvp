@@ -28,7 +28,8 @@ Options (${opts.what}): ${JSON.stringify(records)}`,
       },
       required: ["id", "confirmed"],
     },
-    `You pick which ${opts.what} the user is referring to, using names, roles, companies and the conversation. If only one option fits, pick it.`
+    `You pick which ${opts.what} the user is referring to, using names, roles, companies and the conversation. If only one option fits, pick it.`,
+    { fast: true }
   );
 
   const valid = records.some((r) => r.id === out.id);
