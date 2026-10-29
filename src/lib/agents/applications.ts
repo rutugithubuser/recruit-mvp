@@ -113,6 +113,7 @@ export const myApplicationsAgent: AgentHandler = async ({ ctx, intent }) => {
 };
 
 // ---------- VIEW APPLICANTS (employer) ----------
+const STOP = new Set(["job", "jobs", "all", "my", "the", "for", "applicants", "role", "roles", "posted", "every", "show"]);
 export const viewApplicantsAgent: AgentHandler = async ({ ctx, intent }) => {
   const { data: company } = await supabaseAdmin.from("companies").select("id").eq("owner_id", ctx.userId).maybeSingle();
   if (!company) return { agent: "application", intent: intent.intent, reply: "Set up your company profile first." };
@@ -121,7 +122,7 @@ export const viewApplicantsAgent: AgentHandler = async ({ ctx, intent }) => {
   if (!jobs?.length) return { agent: "application", intent: intent.intent, reply: "You haven't posted any jobs yet." };
 
   // If the user named a job, narrow to it (simple word match on the title).
-  const wanted = `${intent.entities.title ?? ""} ${intent.entities.reference ?? ""}`.toLowerCase().split(/\W+/).filter((w) => w.length > 2 && w !== "job");
+  const wanted = `${intent.entities.title ?? ""} ${intent.entities.reference ?? ""}`.toLowerCase().split(/\W+/).filter((w) => w.length > 2 && !STOP.has(w));
   const named = wanted.length ? jobs.filter((j) => wanted.some((w) => j.title.toLowerCase().includes(w))) : [];
   const jobIds = (named.length ? named : jobs).map((j) => j.id);
 

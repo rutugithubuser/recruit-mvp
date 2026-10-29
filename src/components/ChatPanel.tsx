@@ -12,10 +12,13 @@ export default function ChatPanel({
   suggestions,
   onResult,
   allowUpload = false,
+  command,
 }: {
   suggestions: string[];
   onResult?: (r: AgentResult) => void;
   allowUpload?: boolean;
+  // Dashboard quick actions: send a prompt directly, or open the mic with a hint of what to say.
+  command?: { id: number; prompt?: string; hint?: string } | null;
 }) {
   const [messages, setMessages] = useState<Msg[]>([
     { from: "agent", text: "Hi! Tap the mic and speak, or type what you need." },
@@ -27,6 +30,7 @@ export default function ChatPanel({
   const recRef = useRef<any>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [hint, setHint] = useState("");
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -78,13 +82,17 @@ export default function ChatPanel({
   }
 
   function toggleMic() {
+    if (listening) {
+      recRef.current?.stop();
+      return;
+    }
+    startListening();
+  }
+
+  function startListening() {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
       alert("Voice input needs Chrome or Edge. You can type instead.");
-      return;
-    }
-    if (listening) {
-      recRef.current?.stop();
       return;
     }
     const rec = new SR();
@@ -103,6 +111,7 @@ export default function ChatPanel({
     };
     rec.onend = () => {
       setListening(false);
+      setHint("");
       if (finalText.trim()) send(finalText, "voice");
     };
     rec.onerror = () => setListening(false);
@@ -110,6 +119,16 @@ export default function ChatPanel({
     rec.start();
     setListening(true);
   }
+
+  useEffect(() => {
+    if (!command) return;
+    if (command.prompt) send(command.prompt);
+    else if (command.hint) {
+      setHint(command.hint);
+      startListening();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [command?.id]);
 
   return (
     <div className="flex flex-col h-full rounded-2xl border border-gray-200 bg-white overflow-hidden">
@@ -143,7 +162,12 @@ export default function ChatPanel({
         </div>
       )}
 
-      <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="border-t border-gray-200 p-3 flex gap-2">
+      {hint && (
+        <div className="mx-3 mb-1 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-800">
+          🎤 {listening ? "Listening — " : ""}{hint} <span className="text-indigo-500">(or type it)</span>
+        </div>
+      )}
+      <form onSubmit={(e) => { e.preventDefault(); setHint(""); send(input); }} className="border-t border-gray-200 p-3 flex gap-2">
         <button type="button" onClick={toggleMic} title="Speak"
           className={`shrink-0 h-11 w-11 rounded-full flex items-center justify-center text-lg ${
             listening ? "bg-red-500 text-white animate-pulse" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}>
