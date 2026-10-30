@@ -66,13 +66,13 @@ function verdict(score: number) {
   return "🚩 High risk";
 }
 
-type Ev = { entity_id: string; event_type: string; status: string; created_at: string };
+type Ev = { entity_id: string; event_type: string; status: string; created_at: string; dispute_deadline: string | null };
 
 async function eventsFor(ids: string[]): Promise<Map<string, Ev[]>> {
   const map = new Map<string, Ev[]>();
   if (!ids.length) return map;
   const { data } = await supabaseAdmin
-    .from("score_events").select("entity_id, event_type, status, created_at").in("entity_id", ids)
+    .from("score_events").select("entity_id, event_type, status, created_at, dispute_deadline").in("entity_id", ids)
     .order("created_at", { ascending: false });
   for (const e of data ?? []) map.set(e.entity_id, [...(map.get(e.entity_id) ?? []), e]);
   return map;
@@ -81,7 +81,12 @@ async function eventsFor(ids: string[]): Promise<Map<string, Ev[]>> {
 function historyLines(evs: Ev[]): string | undefined {
   if (!evs.length) return "No violations on record.";
   return evs.slice(0, 6)
-    .map((e) => `• ${EVENT_LABEL[e.event_type]} (${e.status === "confirmed" ? "−5, confirmed" : e.status}) · ${new Date(e.created_at).toLocaleDateString("en-IN")}`)
+    .map((e) => {
+      const when = e.status === "pending" && e.dispute_deadline
+        ? `pending, −5 applies ${new Date(e.dispute_deadline).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} unless disputed`
+        : e.status === "confirmed" ? "−5, confirmed" : e.status;
+      return `• ${EVENT_LABEL[e.event_type]} (${when}) · ${new Date(e.created_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}`;
+    })
     .join("\n");
 }
 
