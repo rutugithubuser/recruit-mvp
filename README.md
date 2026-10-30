@@ -4,7 +4,8 @@ Employers, candidates and recruitment firms **speak or type** what they need. AI
 writing job descriptions, company profiles, resumes, offer letters and acceptance letters, matching
 people to jobs, and keeping a trust score for everyone. There are no forms after sign-up.
 
-Works in the **web app** (mic + chat) and on **WhatsApp** (text, voice notes, resume files).
+Works in the **web app** (mic + chat). A **WhatsApp** channel (text, voice notes, resume files) is built
+and included, but not live in this demo (see *Known limits*).
 
 ---
 
@@ -22,7 +23,7 @@ Works in the **web app** (mic + chat) and on **WhatsApp** (text, voice notes, re
 | Score lookup | Employers/recruiters check candidates by **name, company or Aadhaar**; candidates check companies |
 | Dashboards | Separate dashboards for candidates, employers and recruitment firms: stats, status lists, quick actions, AI activity |
 | Central data lake | One database holding every resume (all versions), job, application, offer, acceptance, hiring record, score event and AI action, with a viewer at `/data-lake` |
-| Permissions | WhatsApp (linked by a one-time code), microphone, and file access from laptop or mobile |
+| Permissions | Microphone and file access from laptop or mobile are live. WhatsApp linking (one-time code) is built; see *Known limits* |
 
 ## Agents
 
@@ -70,7 +71,7 @@ Twilio WhatsApp · Vercel. Most of the code was written with an AI coding assist
 4. Optional demo data (15 fictional candidates, 8 jobs, some lowered scores; no AI quota used):
    `node --env-file=.env.local scripts/seed.mjs`
 
-### WhatsApp (Twilio sandbox)
+### WhatsApp (Twilio) — built, not live in this demo
 
 1. Deploy (WhatsApp needs a public URL).
 2. Twilio Console → Messaging → Try it out → Send a WhatsApp message → **Sandbox settings**:
@@ -82,7 +83,13 @@ Twilio WhatsApp · Vercel. Most of the code was written with an AI coding assist
 
 - Search and matching are shown on a **seeded set of 15 fictional candidates and 8 jobs**
   (`scripts/seed.mjs`). Everything created in the demo itself was generated live by the agents.
-- WhatsApp uses the **Twilio sandbox**; production needs an approved WhatsApp Business number.
+- **WhatsApp is built but not connected in this demo.** The code is complete (`src/app/api/whatsapp`,
+  `src/lib/whatsapp.ts`): number linking by one-time code, Twilio signature checks, text and voice-note
+  messages (transcribed by AI, English/Hindi/Marathi), resume files, and replies from the same agents.
+  It could not go live because Twilio's limited trial only allows pre-approved template messages, which
+  blocks the agents' free-text replies. Turning it on needs a paid Twilio account (or Meta's WhatsApp Cloud
+  API) plus the setup steps above; no code changes. Unofficial WhatsApp libraries were rejected because
+  they break WhatsApp's terms and risk banning the number.
 - Gemini **free tier** has daily limits; the app switches models automatically when one runs out.
 - Voice input in the browser needs Chrome or Edge.
 - Disputes are recorded and pause the penalty; a human review step would be added for production.

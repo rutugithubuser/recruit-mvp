@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase/browser";
+import AuthLayout from "@/components/AuthLayout";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,26 +18,31 @@ export default function LoginPage() {
     setError("");
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
-    if (error) return setError(error.message);
+    if (error) return setError(error.message === "Invalid login credentials" ? "Wrong email or password." : error.message);
     router.push("/dashboard");
   }
 
   return (
-    <main className="flex-1 flex items-center justify-center px-4">
-      <form onSubmit={onSubmit} className="w-full max-w-sm rounded-2xl bg-white border border-gray-200 p-6 space-y-4">
-        <h1 className="text-2xl font-bold">Log in</h1>
-        <input className="w-full rounded-lg border border-gray-300 px-3 py-2" type="email" placeholder="Email"
-          value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <input className="w-full rounded-lg border border-gray-300 px-3 py-2" type="password" placeholder="Password"
-          value={password} onChange={(e) => setPassword(e.target.value)} required />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button disabled={busy} className="w-full rounded-lg bg-indigo-600 py-2.5 text-white font-semibold disabled:opacity-60">
-          {busy ? "Logging in..." : "Log in"}
-        </button>
-        <p className="text-sm text-gray-600 text-center">
-          New here? <Link href="/signup" className="text-indigo-600 font-medium">Create an account</Link>
-        </p>
+    <AuthLayout>
+      <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+      <p className="mt-1 text-sm text-muted">Log in to your HireSpeak workspace.</p>
+      <form onSubmit={onSubmit} className="mt-8 space-y-4">
+        <div>
+          <label className="label" htmlFor="email">Email</label>
+          <input id="email" className="input" type="email" placeholder="you@company.com" autoComplete="email"
+            value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <label className="label" htmlFor="password">Password</label>
+          <input id="password" className="input" type="password" placeholder="Your password" autoComplete="current-password"
+            value={password} onChange={(e) => setPassword(e.target.value)} required />
+        </div>
+        {error && <p className="rounded-control bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
+        <button disabled={busy} className="btn-primary w-full">{busy ? "Logging in…" : "Log in"}</button>
       </form>
-    </main>
+      <p className="mt-6 text-center text-sm text-muted">
+        New to HireSpeak? <Link href="/signup" className="font-medium text-primary hover:underline">Create an account</Link>
+      </p>
+    </AuthLayout>
   );
 }
