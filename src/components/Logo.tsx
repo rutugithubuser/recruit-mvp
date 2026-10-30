@@ -9,7 +9,7 @@ export default function Logo({ href = "/", small = false }: { href?: string; sma
         </svg>
       </span>
       <span className={small ? "text-base" : "text-lg"}>
-        Hire<span className="text-primary">Speak</span>
+        Vox<span className="text-primary">Hire</span>
       </span>
     </Link>
   );

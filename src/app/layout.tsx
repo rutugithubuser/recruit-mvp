@@ -6,7 +6,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "HireSpeak — AI-native recruiting for SMEs", template: "%s · HireSpeak" },
+  title: { default: "VoxHire — AI-native recruiting for SMEs", template: "%s · VoxHire" },
   description: "Hire and get hired by just saying it. AI agents write job posts, resumes, offers and acceptances, and keep trust scores for everyone.",
 };
 

@@ -56,7 +56,7 @@ async function handle(p: Record<string, string>) {
     // 2) Who is this?
     const { data: prof } = await supabaseAdmin.from("profiles").select("id").eq("phone", phone).maybeSingle();
     if (!prof) {
-      return sendWhatsApp(to, "👋 Welcome to HireSpeak! This number isn't linked yet.\n\nOpen your HireSpeak dashboard, find *Connect WhatsApp*, and send the code here like this:\nLINK 123456");
+      return sendWhatsApp(to, "👋 Welcome to VoxHire! This number isn't linked yet.\n\nOpen your VoxHire dashboard, find *Connect WhatsApp*, and send the code here like this:\nLINK 123456");
     }
     const ctx = await getContextForUser(prof.id);
     if (!ctx) return sendWhatsApp(to, "Your account could not be found. Please log in on the web app once.");
@@ -117,7 +117,7 @@ async function linkNumber(to: string, phone: string, code: string) {
     employer: '• "Post a job for an accountant, 2 years, Tally, 25-30k, Andheri"\n• "Find me a CA with 2 years in Mumbai"\n• "Send an offer to Priya Shah"\n• "Check score for Aadhaar 1234 5678 9012"',
     recruiter: '• "Find me a CA with 2 years in Mumbai"\n• "Show my pipeline"\n• "Check the score of Mehta Textiles"',
   };
-  return sendWhatsApp(to, `✅ Linked! Hi ${match.full_name ?? ""}. You can now use HireSpeak right here by text or voice note.\n\nTry:\n${tips[match.role]}`);
+  return sendWhatsApp(to, `✅ Linked! Hi ${match.full_name ?? ""}. You can now use VoxHire right here by text or voice note.\n\nTry:\n${tips[match.role]}`);
 }
 
 /** Last few exchanges, so "accept the first one" works across WhatsApp messages. */

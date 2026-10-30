@@ -25,7 +25,7 @@ export default function LoginPage() {
   return (
     <AuthLayout>
       <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-      <p className="mt-1 text-sm text-muted">Log in to your HireSpeak workspace.</p>
+      <p className="mt-1 text-sm text-muted">Log in to your VoxHire workspace.</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <div>
           <label className="label" htmlFor="email">Email</label>
@@ -41,7 +41,7 @@ export default function LoginPage() {
         <button disabled={busy} className="btn-primary w-full">{busy ? "Logging in…" : "Log in"}</button>
       </form>
       <p className="mt-6 text-center text-sm text-muted">
-        New to HireSpeak? <Link href="/signup" className="font-medium text-primary hover:underline">Create an account</Link>
+        New to VoxHire? <Link href="/signup" className="font-medium text-primary hover:underline">Create an account</Link>
       </p>
     </AuthLayout>
   );

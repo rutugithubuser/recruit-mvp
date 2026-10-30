@@ -1,4 +1,4 @@
-# HireSpeak — AI-native, voice-first recruiting for SMEs
+# VoxHire — AI-native, voice-first recruiting for SMEs
 
 Employers, candidates and recruitment firms **speak or type** what they need. AI agents do the work:
 writing job descriptions, company profiles, resumes, offer letters and acceptance letters, matching
