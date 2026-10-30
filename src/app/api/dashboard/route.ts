@@ -74,7 +74,7 @@ export async function GET(req: Request) {
     if (!co) return Response.json({ role, stats: [], lists: [], agentActivity });
     const [{ data: jobs }, { data: offers }] = await Promise.all([
       supabaseAdmin.from("jobs").select("id, title, status, applications(count)").eq("company_id", co.id).order("created_at", { ascending: false }),
-      supabaseAdmin.from("offers").select("status, jobs(title), candidates(full_name, score)").eq("company_id", co.id).order("created_at", { ascending: false }),
+      supabaseAdmin.from("offers").select("status, joining_date, jobs(title), candidates(full_name, score)").eq("company_id", co.id).order("created_at", { ascending: false }),
     ]);
     const applicants = (jobs ?? []).reduce((n, j) => n + ((j.applications as { count: number }[])?.[0]?.count ?? 0), 0);
     return Response.json({
@@ -86,6 +86,25 @@ export async function GET(req: Request) {
         { label: "Joined", value: countOf(offers, "status", "joined"), prompt: "Show my offers" },
       ],
       lists: [
+        // Accepted offers whose joining date has passed: the employer must confirm what happened.
+        ...(() => {
+          const today = new Date().toISOString().slice(0, 10);
+          const overdue = (offers ?? []).filter((o) => o.status === "accepted" && o.joining_date && o.joining_date <= today);
+          return overdue.length
+            ? [{
+                title: "⚠️ Joining confirmation needed",
+                items: overdue.map((o) => {
+                  const c = rel<Named>(o.candidates); const job = rel<Named>(o.jobs);
+                  return {
+                    title: `${c?.full_name} — ${job?.title}`,
+                    note: `Joining date ${new Date(o.joining_date as string).toLocaleDateString("en-IN")} has passed. Tap to confirm.`,
+                    status: "pending",
+                    prompt: `Did ${c?.full_name} join for the ${job?.title} role? Show my offers`,
+                  };
+                }),
+              }]
+            : [];
+        })(),
         {
           title: "My jobs",
           items: (jobs ?? []).map((j) => ({

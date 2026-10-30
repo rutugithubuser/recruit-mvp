@@ -96,6 +96,7 @@ Twilio WhatsApp · Vercel. Most of the code was written with an AI coding assist
 
 ## Next steps
 
-Admin review queue for disputes · Aadhaar verification through a licensed provider (DigiLocker) ·
+Daily joining-date reminders by email/WhatsApp (the employer dashboard already flags accepted offers
+whose joining date has passed, for one-tap "joined / didn't join") · Admin review queue for disputes · Aadhaar verification through a licensed provider (DigiLocker) ·
 Hindi and Marathi in the web app · semantic search with embeddings as the data lake grows ·
 email/WhatsApp notifications when an offer or report arrives.
